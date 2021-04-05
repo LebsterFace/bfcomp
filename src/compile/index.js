@@ -42,38 +42,68 @@ function compile(AST, optimized = false) {
 	}
 
 	function allocate(size) {
-		// TODO: Find the nearest space
-
 		const takenCells = getTakenCells();
 
-		function checkStartingAt(pos) {
-			// Loop over every after that start until we reach start+size
-			for (let checkPos = pos; checkPos < pos + size; checkPos++) {
-				if (!isCellFree(checkPos, takenCells)) {
-					// Don't do needless checks
-					return [false, checkPos];
+		function check(start) {
+			for (let current = start; current < start + size; current++) {
+				if (!isCellFree(current, takenCells)) {
+					return [false, current];
 				}
 			}
 
 			return [true, null];
 		}
 
-		// Check every start position
-		for (let startPos = 0; startPos < tape.length; startPos++) {
-			const [isAllFree, newPosition] = checkStartingAt(startPos);
+		let positive = null,
+			negative = null;
+
+		// Check forwards
+		for (let start = currentCell; start < tape.length; start++) {
+			const [isAllFree, newPosition] = check(start);
 
 			if (isAllFree) {
-				return startPos;
-			} else {
-				startPos = newPosition;
-			}
+				positive = start;
+				break;
+			} else start = newPosition;
 		}
 
-		throw new Error(`Sorry, could not allocate ${size} cells!`);
+		// Check backwards
+		for (let start = currentCell; start >= 12; start--) {
+			const [isAllFree, newPosition] = check(start - 12);
+
+			if (isAllFree) {
+				negative = start;
+				break;
+			} else start = newPosition - 12;
+		}
+
+		const positiveDist = Math.abs(currentCell - positive),
+			  negativeDist = Math.abs(currentCell - negative);
+
+		if (positive === null && negative === null) {
+			throw new Error(`Sorry, could not allocate ${size} cells!`);
+		} else if (positive === null) {
+			return negative;
+		} else if (negative === null) {
+			return positive;
+		} else if (positiveDist >= negativeDist) {
+			return positive;
+		} else {
+			return negative;
+		}
 	}
 
 	function commentEndl(comment) {
 		return optimized ? "" : " # " + comment + "\n";
+	}
+
+	if (1 == 1) {
+
+		currentCell = 20;
+		const newPos = allocate(8);
+		brainF += moveTo(newPos);
+
+		return brainF;
 	}
 
 	for (const {type: NodeType, value: info} of AST) {
