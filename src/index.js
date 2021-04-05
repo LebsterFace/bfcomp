@@ -1,6 +1,6 @@
 const parser = require("./parser"),
 	compile = require("./compile"),
-	optimize =  require("./optimize"),
+	optimize = require("./compile/optimize"),
 	path = require("path");
 
 const {inspect} = require("util"),
