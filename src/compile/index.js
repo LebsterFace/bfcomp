@@ -97,15 +97,6 @@ function compile(AST, optimized = false) {
 		return optimized ? "" : " # " + comment + "\n";
 	}
 
-	if (1 == 1) {
-
-		currentCell = 20;
-		const newPos = allocate(8);
-		brainF += moveTo(newPos);
-
-		return brainF;
-	}
-
 	for (const {type: NodeType, value: info} of AST) {
 		if (NodeType === "DECLARATION") {
 			const startingPosition = currentCell;
