@@ -68,13 +68,13 @@ function compile(AST, optimized = false) {
 		}
 
 		// Check backwards
-		for (let start = currentCell; start >= 12; start--) {
-			const [isAllFree, newPosition] = check(start - 12);
+		for (let start = currentCell; start >= size; start--) {
+			const [isAllFree, newPosition] = check(start - size);
 
 			if (isAllFree) {
 				negative = start;
 				break;
-			} else start = newPosition - 12;
+			} else start = newPosition - size;
 		}
 
 		const positiveDist = Math.abs(currentCell - positive),

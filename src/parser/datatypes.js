@@ -1,8 +1,6 @@
 const A = require("arcsecond"),
       { char, boolean, number, string } = require("./common");
 
-const {simpleNumber} = require("../brainf");
-
 const types = {
     byte: {
         parser: number,
