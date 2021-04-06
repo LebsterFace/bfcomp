@@ -19,5 +19,8 @@ function optimize(brainF, n = 0) {
 }
 
 module.exports = function(input) {
-    return optimize(input.replace(/[^<>+,\.\[\]+\-]/g, ""), 10);
+    let brainF = input.replace(/(.*) # .+/g, "$1");
+    brainF = brainF.replace(/[^<>+,\.\[\]+\-]/g, "");
+
+    return optimize(brainF, 15);
 };

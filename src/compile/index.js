@@ -94,10 +94,10 @@ function compile(AST, optimized = false) {
 	}
 
 	function commentEndl(comment) {
-		// TODO: Sanitize comments
 		return optimized ? "" : " # " + comment + "\n";
 	}
 
+	// TODO: Fragment into multiple files
 	for (const {type: NodeType, value: info} of AST) {
 		if (NodeType === "DECLARATION") {
 			const startingPosition = currentCell;
