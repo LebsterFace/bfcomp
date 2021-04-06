@@ -94,13 +94,13 @@ function compile(AST, optimized = false) {
 	}
 
 	function commentEndl(comment) {
+		// TODO: Sanitize comments
 		return optimized ? "" : " # " + comment + "\n";
 	}
 
 	for (const {type: NodeType, value: info} of AST) {
 		if (NodeType === "DECLARATION") {
 			const startingPosition = currentCell;
-
 			const DataType = types[info.valueDataType];
 
 			const theVariable = {
@@ -119,10 +119,10 @@ function compile(AST, optimized = false) {
 			theVariable.memoryLocation = newLocation;
 			variables[info.name] = theVariable;
 
+			// Get the current cells at the variable's location
 			const existingCells = [];
-			for (let i = newLocation; i < newLocation + theVariable.size; i++) {
+			for (let i = newLocation; i < newLocation + theVariable.size; i++)
 				existingCells.push(tape[i]);
-			}
 
 			// Generate the code to change the existing cells to the new cells
 			const newCells = DataType.toCells(theVariable.value),
@@ -141,9 +141,57 @@ function compile(AST, optimized = false) {
 			brainF += moveTo(startingPosition);
 			brainF += commentEndl(`Move back to starting position`);
 		} else if (NodeType === "ASSIGNMENT") {
+			const startingPosition = currentCell,
+				  DataType = types[info.valueDataType];
+			
+			const theVariable = variables[info.name],
+				  newVariable = {
+					  value: info.value.value,
+					  size: DataType.size || info.value.size
+				  };
 
+			// Check if we can't fit the new value
+			if (newVariable.size > theVariable.size) {
+				throw new Error(`New value for '${info.name}' is too large for allocated space!`);
+			}
+
+			// Internally assign the new value
+			theVariable.value = newVariable.value;
+			theVariable.size = newVariable.size;
+
+			const pos = theVariable.memoryLocation;
+
+			// Move to the variable
+			brainF += moveTo(pos);
+			brainF += commentEndl(`Move to '${info.name}'`);
+			
+			// Get the current cells at the variable's location
+			const existingCells = [];
+			for (let i = pos; i < pos + theVariable.size; i++) {
+				existingCells.push(tape[i]);
+			}
+
+			// Generate the code to change the existing cells to the new cells
+			const newCells = DataType.toCells(theVariable.value),
+			      getToCells = changeCells(existingCells, newCells);
+
+			// Assign cells to the new value
+			brainF += getToCells;
+			for (let i = pos; i < pos + theVariable.size; i++) {
+				tape[i] = newCells[i];
+			}
+
+			brainF += commentEndl(`Set '${info.name}' to '${info.value.value}'`);
+
+			// Move away from the variable
+			brainF += ">";
+			brainF += commentEndl(`Move away from '${info.name}'`);
+			currentCell += theVariable.size;
+
+			brainF += moveTo(startingPosition);
+			brainF += commentEndl(`Move back to starting position`);
 		} else if (NodeType === "INVOCATION") {
-			const oldPosition = currentCell;
+			const startingPosition = currentCell;
 			// TODO: Multiple arguments
 			const varName = info.args[0].value;
 			if (!(varName in variables)) parsingError(`Unknown variable '${varName}'`);
@@ -153,13 +201,18 @@ function compile(AST, optimized = false) {
 			brainF += commentEndl(`Move to '${varName}'`);
 
 			if (info.keyword === "OUT") {
-				brainF += ".".repeat(variables[varName].DataType.size);
+				const printAll = Array.from({length: variables[varName].size}, () => ".");
+				brainF += printAll.join(">");
 				brainF += commentEndl(`Output '${varName}'`);
+
+				// Move away from the variable
+				brainF += ">";
+				brainF += commentEndl(`Move away from '${varName}'`);
+				currentCell += variables[varName].size;
 			}
 
-			// Move back
-			brainF += moveTo(oldPosition);
-			brainF += commentEndl("Move back to original position");
+			brainF += moveTo(startingPosition);
+			brainF += commentEndl(`Move back to starting position`);
 		}
 	}
 
